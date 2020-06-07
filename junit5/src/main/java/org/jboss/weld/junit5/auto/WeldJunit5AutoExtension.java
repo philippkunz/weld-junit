@@ -48,14 +48,20 @@ import static org.jboss.weld.junit5.ExtensionContextUtils.getExplicitInjectionIn
 public class WeldJunit5AutoExtension extends WeldJunit5Extension {
 
     @Override
-    protected void weldInit(Object testInstance, ExtensionContext context, Weld weld, WeldInitiator.Builder weldInitiatorBuilder) {
+    protected void weldInit(ExtensionContext context, Weld weld, WeldInitiator.Builder weldInitiatorBuilder) {
 
-        Class<?> testClass = testInstance.getClass();
+        Class<?> testClass = context.getRequiredTestInstance().getClass();
 
         ClassScanning.scanForRequiredBeanClass(testClass, weld, getExplicitInjectionInfoFromStore(context));
 
         weld.addBeanClass(testClass);
-        weld.addExtension(new TestInstanceInjectionExtension(testClass, testInstance));
+        weld.addExtension(new TestInstanceInjectionExtension(context));
+
+        try {
+            testClass.getDeclaredConstructor();
+        } catch (NoSuchMethodException ex) {
+            weld.addExtension(new NestedTestInstanceInjectionExtension(context));
+        }
 
         AnnotationSupport.findRepeatableAnnotations(testClass, ActivateScopes.class)
                 .forEach(ann -> weldInitiatorBuilder.activate(ann.value()));

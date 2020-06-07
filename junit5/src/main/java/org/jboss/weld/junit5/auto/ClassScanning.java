@@ -268,7 +268,7 @@ class ClassScanning {
                 isAnnotated(clazz, Stereotype.class);
     }
 
-    private static List<Field> findAllFieldsInHierarchy(Class<?> clazz) {
+    static List<Field> findAllFieldsInHierarchy(Class<?> clazz) {
         Preconditions.notNull(clazz, "Class must not be null");
         List<Field> localFields = getDeclaredFields(clazz).stream().
                 filter((field) -> !field.isSynthetic())
@@ -276,11 +276,10 @@ class ClassScanning {
         List<Field> superclassFields = getSuperclassFields(clazz).stream()
                 .filter((field) -> !isMethodShadowedByLocalFields(field, localFields))
                 .collect(Collectors.toList());
-        List<Field> methods = new ArrayList<>();
-        methods.addAll(superclassFields);
-        methods.addAll(localFields);
-
-        return methods;
+        List<Field> fields = new ArrayList<>();
+        fields.addAll(superclassFields);
+        fields.addAll(localFields);
+        return fields;
     }
 
     private static List<Field> getSuperclassFields(Class<?> clazz) {

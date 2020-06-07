@@ -17,6 +17,8 @@
 package org.jboss.weld.junit5.auto;
 
 import org.jboss.weld.util.annotated.ForwardingAnnotatedType;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestInstances;
 
 import javax.enterprise.context.spi.CreationalContext;
 import javax.enterprise.event.Observes;
@@ -35,9 +37,12 @@ import java.util.stream.Collectors;
 
 
 /**
- * Extension class that ensure proper injection of an externally provided
- * test instance.
- *
+ * Extension class that ensures proper injection of an externally provided
+ * test instance as a CDI bean.
+ * {@link org.junit.jupiter.api.Nested Nested}, inner classes are not beans
+ * because they have no zero args constructor, for which there is
+ * {@link NestedTestInstanceInjectionExtension}.
+ * <p>
  * NOTE: When JUnit 5 provides a test instance creation extension point this
  * should be removed and the test instance should be obtained from the
  * container via proper CDI methods.
@@ -69,33 +74,31 @@ public class TestInstanceInjectionExtension implements Extension {
 
     }
 
-    private Class<?> testClass;
-    private Object testInstance;
+    private final TestInstances testInstances;
 
-    TestInstanceInjectionExtension(Class<?> testClass, Object testInstance) {
-        this.testClass = testClass;
-        this.testInstance = testInstance;
+    TestInstanceInjectionExtension(ExtensionContext context) {
+        this.testInstances = context.getRequiredTestInstances();
     }
 
     <T> void rewriteTestClassScope(@Observes ProcessAnnotatedType<T> pat, BeanManager beanManager) {
 
         AnnotatedType<T> annotatedType = pat.getAnnotatedType();
 
-        if (annotatedType.getJavaClass().equals(testClass)) {
+        testInstances.findInstance(annotatedType.getJavaClass()).ifPresent(testInstance -> {
 
-            // Replace any test class's scope with @Singleton
+            // add @Singleton to any test class's scope
             Set<Annotation> annotations = annotatedType.getAnnotations().stream()
                     .filter(annotation -> beanManager.isScope(annotation.annotationType()))
                     .collect(Collectors.toSet());
             annotations.add(SINGLETON_LITERAL);
 
             pat.setAnnotatedType(new AnnotationRewritingAnnotatedType<>(annotatedType, annotations));
-        }
+        });
     }
 
     <T> void rewriteTestClassInjections(@Observes ProcessInjectionTarget<T> pit) {
 
-        if (pit.getAnnotatedType().getJavaClass().equals(testClass)) {
+        testInstances.findInstance(pit.getAnnotatedType().getJavaClass()).ifPresent(testInstance -> {
 
             InjectionTarget<T> wrapped = pit.getInjectionTarget();
 
@@ -133,7 +136,7 @@ public class TestInstanceInjectionExtension implements Extension {
                 }
             });
 
-        }
+        });
     }
 
 }
