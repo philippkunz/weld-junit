@@ -1,4 +1,4 @@
-package org.jboss.weld.junit5.nested;
+package org.jboss.weld.junit5.auto.nested;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -11,9 +11,8 @@ import java.util.Set;
 import javax.enterprise.inject.Instance;
 import javax.inject.Inject;
 
-import org.jboss.weld.junit5.WeldInitiator;
-import org.jboss.weld.junit5.WeldJunit5Extension;
-import org.jboss.weld.junit5.WeldSetup;
+import org.jboss.weld.junit5.auto.AddBeanClasses;
+import org.jboss.weld.junit5.auto.WeldJunit5AutoExtension;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,10 +23,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
  * {@code @BeforeEach} should still be invoked for nested classes. For the below scenario to work,
  * we need to make the parent class an injection target as well.
  *
- * @see org.jboss.weld.junit5.auto.nested.AutoSuperClassOfNestedTestClassInjectionTargetTest
+ * @see org.jboss.weld.junit5.nested.SuperClassOfNestedTestClassInjectionTargetTest
  */
-@ExtendWith(WeldJunit5Extension.class)
-public class SuperClassOfNestedTestClassInjectionTargetTest {
+@ExtendWith(WeldJunit5AutoExtension.class)
+@AddBeanClasses(AutoSuperClassOfNestedTestClassInjectionTargetTest.MyBean1.class)
+public class AutoSuperClassOfNestedTestClassInjectionTargetTest {
 
     interface MyBean {
         default String ping() {
@@ -43,9 +43,6 @@ public class SuperClassOfNestedTestClassInjectionTargetTest {
 
     static class MyBean3 extends MyBean2 {
     }
-
-    @WeldSetup
-    WeldInitiator weld = WeldInitiator.of(MyBean1.class);
 
     @Inject
     MyBean myBean;
@@ -85,10 +82,8 @@ public class SuperClassOfNestedTestClassInjectionTargetTest {
     }
 
     @Nested
+    @AddBeanClasses(MyBean2.class)
     class MyNestedTest {
-
-        @WeldSetup
-        WeldInitiator weld = WeldInitiator.of(MyBean2.class);
 
         @Inject
         MyBean myNestedBean;
@@ -105,10 +100,8 @@ public class SuperClassOfNestedTestClassInjectionTargetTest {
         }
 
         @Nested
+        @AddBeanClasses(MyBean3.class)
         class TwiceNestedTest {
-
-            @WeldSetup
-            WeldInitiator weld = WeldInitiator.of(MyBean3.class);
 
             @Inject
             MyBean myTwiceNestedBean;
