@@ -27,7 +27,7 @@ class ActivateScopesInheritanceTest extends BaseActivateScopesInheritanceTest {
 
     @Produces
     @ConversationScoped
-    @ExcludeBean // V6 is annotated with @ApplicationScoped, this tells the container to use producer instead
+    @ExcludeBean // V6 is annotated with @ApplicationScoped, which tells the container to use producer instead
     V6 convoEngine = new V6();
 
     @Test

@@ -27,6 +27,7 @@ import javax.enterprise.inject.Alternative;
 @ApplicationScoped
 public class FooAlternative extends Foo {
 
+    @Override
     public String ping() {
         return FooAlternative.class.getSimpleName();
     }

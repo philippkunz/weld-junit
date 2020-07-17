@@ -577,8 +577,3 @@ This behaviour can be changed by setting a system property `org.jboss.weld.se.ar
 If set, Weld will use a _"flat"_ deployment structure - all bean classes share the same bean archive and all beans.xml descriptors are automatically merged into one.
 Thus alternatives, interceptors and decorators selected/enabled for a bean archive will be enabled for the whole application.
 Note that this configuration only makes difference if you run with *enabled discovery*; it won't affect your deployment if you use synthetic bean archive.
-
-
-## Limitations
-
-* `@Produces`, `@Disposes`, and `@Observes` don't work in `@Nested` test classes which fail to meet [valid bean](http://docs.jboss.org/cdi/spec/1.2/cdi-spec.html#what_classes_are_beans) requirements due to the lack of a no-arg constructor and Weld ignores them silently. However, `@Inject` and parameter injection also work with `@Nested` classes.

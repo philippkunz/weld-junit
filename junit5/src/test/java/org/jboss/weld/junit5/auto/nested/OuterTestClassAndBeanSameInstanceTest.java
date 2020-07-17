@@ -1,6 +1,7 @@
 package org.jboss.weld.junit5.auto.nested;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Objects;
 
@@ -13,6 +14,7 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
 import org.jboss.weld.junit5.auto.EnableAutoWeld;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -111,8 +113,16 @@ public class OuterTestClassAndBeanSameInstanceTest {
         return theBean;
     }
 
+    static boolean disposeBeanInvokedAtLeastOnce;
+
     void disposeBean(@Disposes Bean bean) {
         assertEquals(theBean.ping(), bean.ping());
+        disposeBeanInvokedAtLeastOnce = true;
+    }
+
+    @AfterAll
+    static void checkDisposed() {
+        assertTrue(disposeBeanInvokedAtLeastOnce);
     }
 
     @Inject @Any

@@ -17,6 +17,7 @@
 package org.jboss.weld.junit5.auto;
 
 import org.jboss.weld.environment.se.Weld;
+import org.jboss.weld.environment.se.WeldContainer;
 import org.jboss.weld.junit5.WeldInitiator;
 import org.jboss.weld.junit5.WeldJunit5Extension;
 import org.jboss.weld.junit5.WeldJunitEnricher;
@@ -27,6 +28,8 @@ import static org.jboss.weld.junit5.ExtensionContextUtils.getExplicitInjectionIn
 
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.enterprise.inject.Instance;
 
 /**
  * An alternative to {@link WeldJunit5Extension} allowing to fully leverage annotation based configuration approach.
@@ -58,13 +61,35 @@ public class WeldJunit5AutoExtension extends WeldJunit5Extension {
 
         ClassScanning.scanForRequiredBeanClasses(testClasses, weld, getExplicitInjectionInfoFromStore(context));
 
+//        weld.addBeanClasses(testInstances.stream().toArray(Class[]::new));
+        weld.addBeanClass(DummyBean.class);
         weld.addExtension(new TestInstanceInjectionExtension(testInstances));
 
-        for (Class<?> testClass : testClasses) {
-            AnnotationSupport.findRepeatableAnnotations(testClass, ActivateScopes.class)
-                    .forEach(ann -> weldInitiatorBuilder.activate(ann.value()));
-        }
+        testClasses.stream()
+                .map(testClass -> AnnotationSupport.findRepeatableAnnotations(testClass, ActivateScopes.class))
+                .flatMap(ann -> ann.stream().map(ActivateScopes::value))
+                .forEach(weldInitiatorBuilder::activate);
 
+    }
+
+    protected WeldContainer initWeldContainer(WeldInitiator initiator, ExtensionContext context) {
+
+
+        // this ensures the test class is injected into
+        // in case of nested tests, this also injects into any outer classes
+        initiator.addObjectsToInjectInto(context.getRequiredTestInstances().getAllInstances().stream().collect(Collectors.toSet()));
+
+        WeldContainer weldContainer = initiator.initWeld(context.getRequiredTestClass());
+
+//        // this ensures the test class is injected into
+//        // in case of nested tests, this also injects into any outer classes
+//        System.out.println("going to resolve testInstanceInstances");
+//        List<Instance<?>> testInstances = context.getRequiredTestInstances().getAllInstances().stream().map(Object::getClass).map(weldContainer::select).collect(Collectors.toList());
+//        List<?> testInstanceInstances = testInstances.stream().map(Instance::get).collect(Collectors.toList());
+//        System.out.println("testInstanceInstances = " + testInstanceInstances);
+//        // TODO: dispose testInstanceInstances
+
+        return weldContainer;
     }
 
 }

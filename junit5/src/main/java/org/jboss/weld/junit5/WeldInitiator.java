@@ -182,16 +182,16 @@ public class WeldInitiator extends AbstractWeldInitiator {
         super.shutdownWeldContainer();
     }
 
-    WeldContainer initWeld(Object testInstance) {
+    public WeldContainer initWeld(Class<?> testClass) {
         Weld weld = WeldInitiator.this.weld;
         if (weld == null) {
-            weld = createWeld().addPackage(false, testInstance.getClass());
+            weld = createWeld().addPackage(false, testClass); // TODO: braucht's addPackge von der Test-Klasse bei AutoWeld?
         }
 
         return initWeldContainer(weld);
     }
 
-    void addObjectsToInjectInto(Set<Object> instancesToInjectInto) {
+    public void addObjectsToInjectInto(Set<Object> instancesToInjectInto) {
         for (Object o : instancesToInjectInto) {
             instancesToInject.add(createToInject(o));
         }

@@ -77,6 +77,8 @@ class ClassScanning {
 
             Class<?> currClass = classesToProcess.remove(0);
 
+            // TODO: if (processedClasses.contains(currClass)) continue;
+            // TODO: is like it is now a cycle possible?
             if (foundClasses.contains(currClass) ||
                     excludedBeanTypes.contains(currClass) || excludedBeanClasses.contains(currClass) ||
                     currClass.isPrimitive() || currClass.isSynthetic() ||
@@ -84,7 +86,9 @@ class ClassScanning {
                 continue;
             }
 
-            foundClasses.add(currClass);
+            if (!testClasses.contains(currClass)) {
+                foundClasses.add(currClass);
+            }
 
             findAnnotatedFields(currClass, ExcludeBean.class).stream()
                     .map(Field::getType)
@@ -185,7 +189,12 @@ class ClassScanning {
             AnnotationSupport.findRepeatableAnnotations(currClass, EnableAlternatives.class).stream()
                     .flatMap(ann -> stream(ann.value()))
                     .distinct()
-                    .forEach(weld::addAlternative);
+//                    .forEach(weld::addAlternative);
+                    .forEach(x -> {
+                        classesToProcess.add(x);
+//                        weld.addBeanClass(x);
+                        weld.addAlternative(x);
+                    });
 
             AnnotationSupport.findRepeatableAnnotations(currClass, EnableAlternativeStereotypes.class).stream()
                     .flatMap(ann -> stream(ann.value()))
@@ -200,7 +209,7 @@ class ClassScanning {
         }
 
         for (Class<?> foundClass : foundClasses) {
-            if (hasBeanDefiningAnnotation(foundClass) || testClasses.contains(foundClass)) {
+            if (hasBeanDefiningAnnotation(foundClass)) {
                 weld.addBeanClass(foundClass);
             }
         }

@@ -17,6 +17,7 @@
 package org.jboss.weld.junit5;
 
 import org.jboss.weld.environment.se.Weld;
+import org.jboss.weld.environment.se.WeldContainer;
 import org.jboss.weld.util.collections.ImmutableList;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.AfterAllCallback;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
+import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.BeanManager;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -141,6 +143,7 @@ public class WeldJunit5Extension implements AfterAllCallback, BeforeAllCallback,
             List<Annotation> qualifiers = resolveQualifiers(parameterContext, getContainerFromStore(extensionContext).getBeanManager());
             return getContainerFromStore(extensionContext)
                     .select(parameterContext.getParameter().getType(), qualifiers.toArray(new Annotation[qualifiers.size()])).get();
+            // TODO: dispose parameter again after test method executed
         }
         return null;
     }
@@ -268,13 +271,17 @@ public class WeldJunit5Extension implements AfterAllCallback, BeforeAllCallback,
             }
             setInitiatorToStore(context, initiator);
 
-            // this ensures the test class is injected into
-            // in case of nested tests, this also injects into any outer classes
-            initiator.addObjectsToInjectInto(context.getRequiredTestInstances().getAllInstances().stream().collect(Collectors.toSet()));
-
             // and finally, init Weld
-            setContainerToStore(context, initiator.initWeld(testInstance));
+            setContainerToStore(context, initWeldContainer(initiator, context));
         }
+    }
+
+    protected WeldContainer initWeldContainer(WeldInitiator initiator, ExtensionContext context) {
+        // this ensures the test class is injected into
+        // in case of nested tests, this also injects into any outer classes
+        initiator.addObjectsToInjectInto(context.getRequiredTestInstances().getAllInstances().stream().collect(Collectors.toSet()));
+
+        return initiator.initWeld(context.getRequiredTestClass());
     }
 
 }
